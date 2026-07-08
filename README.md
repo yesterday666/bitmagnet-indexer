@@ -42,10 +42,8 @@ bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/downl
 ### 卸载
 
 ```bash
-# 停止并删除容器
-docker rm -f search-engine 2>/dev/null
-# 删除数据目录（可选）
-rm -rf /mnt/Storage1/search_engine_data
+# 一键卸载（停止容器 + 删除数据）
+bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh) --uninstall
 ```
 
 ---
