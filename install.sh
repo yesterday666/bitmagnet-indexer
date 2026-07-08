@@ -47,7 +47,7 @@ import sys,json; d=json.load(sys.stdin)
 if 'tag_name' in d:
     print(d['tag_name'])
 else:
-    print('v1.0.0')
+    print('v1.0.1')
 " 2>/dev/null || echo "v1.0.0")
 
 RELEASE_BASE="https://github.com/yesterday666/bitmagnet-indexer/releases/download/$LATEST_TAG"
