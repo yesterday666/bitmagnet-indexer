@@ -23,11 +23,10 @@
 
 ## 一键安装（推荐）
 
-把整个源码目录（含镜像 tar.gz + install.sh）拷到新设备任意路径，然后：
+可以直接一行命令在线安装：
 
-```bash
-cd <拷贝到的目录>
-bash install.sh
+```
+bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh)
 ```
 
 脚本会**自动**：识别架构（ARM64/x86_64）选对镜像 → 探测 bitmagnet 数据库所在磁盘并默认把数据卷放同盘
