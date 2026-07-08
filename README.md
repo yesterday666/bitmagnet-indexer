@@ -28,7 +28,9 @@
 ```
 bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh)
 ```
-
+## 一键卸载
+bash install.sh --uninstall
+```
 脚本会**自动**：识别架构（ARM64/x86_64）选对镜像 → 探测 bitmagnet 数据库所在磁盘并默认把数据卷放同盘
 （也可手动输入路径）→ 交互填写 PG / qBittorrent 连接 → 导入镜像 → 启动容器。装完访问 `http://<设备IP>:端口`。
 
