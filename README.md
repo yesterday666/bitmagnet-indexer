@@ -1,3 +1,4 @@
+# 纯ai项目由deepseek-v4-pro生成
 # 双库精选搜索引擎 (Bitmagnet-Indexer)
 
 一个"外挂"式种子搜索/订阅/下载系统，接入现有 **bitmagnet** 爬虫的 PostgreSQL 数据库。
