@@ -1,6 +1,6 @@
 # Bitmagnet-Indexer
 
-> 🤖 纯 AI 项目 · 由 Claude + OpenClaw 生成
+> 🤖 纯 AI 项目 · 由deepseek-v4-pro + OpenClaw 生成
 
 一个"外挂"式种子搜索/订阅/下载系统，接入现有 **bitmagnet** 爬虫的 PostgreSQL 数据库。
 采用**双库架构**：bitmagnet 大库只读、永不修改；本程序在同实例创建 `subs` schema 作为**精选小库**
@@ -22,7 +22,7 @@
 
 ---
 
-## 零、一键安装（推荐）
+## 一键安装（推荐）
 
 ```bash
 # 直接从 GitHub Release 下载并安装（自动识别架构）
