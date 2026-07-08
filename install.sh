@@ -31,7 +31,7 @@ while [ $# -gt 0 ]; do
 done
 
 # ── 镜像加速 ──
-RELEASE_BASE="https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0"
+RELEASE_BASE="https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.1"
 if [ -n "$MIRROR" ]; then
     MIRROR="${MIRROR%/}"
     RELEASE_URL="${MIRROR}/${RELEASE_BASE#https://}"
