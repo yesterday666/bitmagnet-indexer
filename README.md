@@ -1,6 +1,6 @@
 # Bitmagnet-Indexer
 
-> 🤖 纯 AI 项目 · 由deepseek-v4-pro + OpenClaw 生成
+> 🤖 纯 AI 项目 · 由 Claude + OpenClaw 生成
 
 一个"外挂"式种子搜索/订阅/下载系统，接入现有 **bitmagnet** 爬虫的 PostgreSQL 数据库。
 采用**双库架构**：bitmagnet 大库只读、永不修改；本程序在同实例创建 `subs` schema 作为**精选小库**
@@ -22,28 +22,33 @@
 
 ---
 
-## 一键安装（推荐）
+## 零、一键安装（推荐）
 
 ```bash
-# 直接从 GitHub Release 下载并安装（自动识别架构）
-bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh)
+# 安装（自动检测最新版本）
+bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/latest/download/install.sh)
 
-# 国内用户（GitHub 下载慢）可使用镜像加速：
-bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh) --mirror https://ghproxy.com
+# 国内镜像加速
+bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/latest/download/install.sh) --mirror https://ghproxy.com
+
+# 更新（保留配置和数据）
+bash install.sh --update
+
+# 卸载
+bash install.sh --uninstall
 ```
 
 > 💡 **国内镜像加速**：`--mirror` 参数支持任何 GitHub 代理服务，
 > 如 `https://ghproxy.com`、`https://ghfast.com` 等。
 > 原理：[镜像地址] + GitHub Release URL。
-> 也支持 `MIRROR=https://ghproxy.com bash install.sh` 环境变量方式。
 
-脚本会**自动**：识别架构（ARM64/x86_64）→ 从 GitHub Release 下载对应镜像 → 交互填写 PG / qBittorrent 连接 → 导入镜像 → 启动容器。装完访问 `http://<设备IP>:端口`。
+脚本会**自动**：获取最新版本 → 识别架构（ARM64/x86_64）→ 下载对应镜像 → 交互配置 → 部署。
 
 ### 卸载
 
 ```bash
 # 一键卸载（停止容器 + 删除数据）
-bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh) --uninstall
+bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/latest/download/install.sh) --uninstall
 ```
 
 ---
