@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitmagnet-Indexer</title>
+<style>
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--border:#2a2a2a;--text:#e4e4e7;--text2:#a1a1aa;--accent:#6d28d9;--accent2:#8b5cf6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#3b82f6;--radius:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;font-size:14px}
+
+/* ── 顶部导航 ── */
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100;height:48px}
+.nav h1{font-size:15px;font-weight:600;margin-right:24px;white-space:nowrap}
+.nav-tabs{display:flex;gap:0;height:100%}
+.nav-tab{padding:0 16px;height:100%;display:flex;align-items:center;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+
+/* ── 主内容 ── */
+.main{padding:16px;max-width:1200px;margin:0 auto}
+.page{display:none}
+.page.active{display:block}
+
+/* ── 搜索区 ── */
+.search-bar{display:flex;gap:8px;margin-bottom:12px;align-items:flex-end;flex-wrap:wrap}
+/* Bing 风格搜索首页 */
+.hero{max-width:820px;margin:6vh auto 24px;padding:0 16px;text-align:center}
+.hero-logo{font-size:34px;font-weight:700;margin-bottom:22px;letter-spacing:1px}
+.hero-search{display:flex;gap:0;max-width:640px;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,.15);border-radius:26px;overflow:hidden;border:1px solid var(--border)}
+.hero-search input{flex:1;border:none;outline:none;padding:15px 22px;font-size:16px;background:var(--bg2);color:var(--text);font-family:inherit}
+.hero-search .btn{border-radius:0;padding:0 26px;font-size:16px}
+.hero-filters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;align-items:center}
+.hero-filters select{padding:8px 10px}
+.btn.star-btn{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:15px;font-weight:600;padding:11px 22px;border-radius:22px;box-shadow:0 2px 8px rgba(239,68,68,.35)}
+.btn.star-btn:hover{opacity:.9}
+/* 右下角数据概览浮框 */
+#dbstatsBox{position:fixed;right:14px;bottom:14px;z-index:900;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:11px;box-shadow:0 4px 18px rgba(0,0,0,.28);min-width:190px;opacity:.95}
+#dbstatsBox .dbs-title{font-weight:600;margin-bottom:7px;color:var(--accent);letter-spacing:.3px}
+#dbstatsBox .dbs-row{display:flex;justify-content:space-between;gap:14px;padding:2px 0;color:var(--text2);white-space:nowrap}
+#dbstatsBox .dbs-row span:last-child{color:var(--text);font-weight:500}
+@media(max-width:600px){#dbstatsBox{display:none}}
+.search-bar>*{flex:1;min-width:120px}
+.search-bar .btn-wrap{flex:0 0 auto}
+.search-bar input,.search-bar select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;width:100%;outline:none;border-radius:var(--radius);font-size:13px;font-family:inherit}
+.search-bar input:focus,.search-bar select:focus{border-color:var(--accent)}
+
+/* ── 按钮 ── */
+.btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;cursor:pointer;font-weight:500;border-radius:var(--radius);font-size:13px;white-space:nowrap;transition:opacity .2s;font-family:inherit}
+.btn:hover{opacity:.85}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn.outline:hover{background:var(--bg3)}
+.btn.danger{background:var(--red)}
+.btn.sm{padding:5px 10px;font-size:11px}
+.btn.test{background:var(--green)}
+.btn.test:hover{opacity:.85}
+.btn.copy{background:var(--accent);color:#fff;min-width:80px}
+.btn.copy.done{background:var(--green)}
+.btnr{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── 卡片 ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.ct{font-size:12px;font-weight:600;margin-bottom:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:6px}
+.ct .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.ct .dot.off{background:var(--red)}
+
+/* ── 订阅标签 ── */
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);padding:5px 8px;border-radius:14px;font-size:11px;margin:2px}
+.tag .rm{cursor:pointer;color:var(--text2);font-weight:bold}
+.tag .rm:hover{color:var(--red)}
+
+/* ── 挖掘列表 ── */
+.miner-item{border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:6px;background:var(--bg3)}
+.prog{height:5px;background:var(--bg);border-radius:3px;margin:6px 0;overflow:hidden}
+.prog .fill{height:100%;background:var(--accent);transition:width .5s;border-radius:3px}
+
+/* ── 搜索结果卡片 ── */
+.res-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;transition:border-color .2s;cursor:pointer}
+.res-card:hover{border-color:var(--accent)}
+.res-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.res-name{flex:1;font-size:13px;color:var(--text);word-break:break-all;line-height:1.4}
+.res-link{font-size:11px;color:var(--accent);text-decoration:none;white-space:nowrap;padding:4px 8px;background:rgba(109,40,217,0.15);border-radius:4px}
+.res-link:hover{background:rgba(109,40,217,0.3)}
+.res-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.res-meta-item{font-size:10px;color:var(--text2);white-space:nowrap}
+.res-meta-item.hash{font-family:monospace;color:#52525b}
+
+/* ── 统计 ── */
+.stat{text-align:center;padding:8px;background:var(--bg3);border-radius:var(--radius)}
+.stat .v{font-size:20px;font-weight:700;color:var(--accent)}
+.stat .l{font-size:10px;color:var(--text2)}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}
+
+/* ── 详情页（独立页面） ── */
+.detail-overlay{position:fixed;top:48px;left:0;right:0;bottom:0;background:var(--bg);z-index:50;overflow-y:auto;display:none}
+.detail-overlay.open{display:block}
+.detail-content{max-width:1000px;margin:0 auto;padding:16px}
+.detail-back{display:inline-flex;align-items:center;gap:4px;color:var(--text2);cursor:pointer;font-size:13px;margin-bottom:16px;background:none;border:none;font-family:inherit}
+.detail-back:hover{color:var(--text)}
+.detail-name{font-size:16px;font-weight:600;margin-bottom:4px;word-break:break-all;line-height:1.5}
+.detail-sub{font-size:11px;color:var(--text2);margin-bottom:16px}
+/* 三栏布局 */
+.detail-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:700px){.detail-grid{grid-template-columns:1fr}}
+.detail-meta-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.detail-meta-card .mrow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:12px}
+.detail-meta-card .mrow:last-child{border-bottom:none}
+.detail-meta-card .mlabel{color:var(--text2)}
+.detail-meta-card .mval{color:var(--text);font-weight:500;text-align:right;word-break:break-all}
+.detail-poster img{width:100%;border-radius:var(--radius);border:1px solid var(--border)}
+.detail-poster .label{font-size:10px;color:var(--text2);text-align:center;margin-top:4px}
+/* 磁力链接 */
+.magnet-box{display:flex;gap:8px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px}
+.magnet-box code{flex:1;font-size:11px;color:var(--text2);word-break:break-all;font-family:monospace;background:var(--bg);padding:6px 10px;border-radius:4px;max-height:60px;overflow-y:auto}
+/* 截图区 */
+.screenshots-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.screenshots-row img{max-width:220px;max-height:320px;border-radius:var(--radius);border:1px solid var(--border);object-fit:cover}
+/* 文件列表 */
+.file-table{width:100%;font-size:11px;border-collapse:collapse}
+.file-table td{padding:4px 8px;border-bottom:1px solid #1a1a1a;color:var(--text2)}
+.file-table .img-row{color:var(--yellow)}
+.file-table .fsize{text-align:right;white-space:nowrap;color:var(--text2)}
+
+/* ── 设置页 ── */
+.setting-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.setting-grid{grid-template-columns:1fr}}
+.setting-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.setting-card label{font-size:11px;color:var(--text2);margin-bottom:2px;display:block}
+.setting-card input,.setting-card select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;width:100%;outline:none;border-radius:var(--radius);font-size:13px;font-family:inherit;margin-bottom:8px}
+.setting-card input:focus,.setting-card select:focus{border-color:var(--accent)}
+
+/* ── Toast ── */
+.toast{position:fixed;top:56px;right:16px;padding:10px 16px;border-radius:var(--radius);font-size:12px;z-index:999;animation:si .3s;max-width:360px}
+.toast.ok{background:#166534;color:#bbf7d0}
+.toast.err{background:#991b1b;color:#fecaca}
+.toast.info{background:#1e3a5f;color:#bfdbfe}
+@keyframes si{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.flex{display:flex;align-items:center;justify-content:space-between}
+.mb8{margin-bottom:8px}
+.mt8{margin-top:8px}
+label{font-size:11px;color:var(--text2);margin-bottom:2px;display:block}
+</style>
+</head>
+<body>
+
+<!-- ═══ 顶部导航 ═══ -->
+<nav class="nav">
+  <h1>🧲 Bitmagnet-Indexer</h1>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('mining')">📡 搜索与挖掘</button>
+    <button class="nav-tab" onclick="switchTab('settings')">⚙️ 系统设置</button>
+  </div>
+  <div class="nav-right">
+    <span id="stBadge" style="font-size:11px;color:var(--green)">● 运行中</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════ 页面1：搜索与挖掘 ═══════════════════════ -->
+<div class="main page active" id="pageMining">
+
+<!-- Bing 风格搜索 -->
+<div class="hero">
+  <div class="hero-logo">🧲 Bitmagnet-Indexer</div>
+  <div class="hero-search">
+    <input id="skw" placeholder="输入关键词 / 番号搜索…" onkeydown="if(event.key==='Enter')doSearch()">
+    <button class="btn" onclick="doSearch()" id="sBtn">🔍 搜索</button>
+  </div>
+  <div class="hero-filters">
+    <select id="ssort" onchange="doSearch()"><option value="date">按日期↓</option><option value="size">按大小↓</option></select>
+    <select id="sfTime" onchange="doSearch()"><option value="">全部时间</option><option value="gt-1day">最近1天</option><option value="gt-7day">最近7天</option><option value="gt-31day">最近31天</option><option value="gt-365day">最近1年</option></select>
+    <select id="sfSize" onchange="doSearch()"><option value="">全部大小</option><option value="lt100mb">&lt;100MB</option><option value="gt100mb-lt500mb">100-500MB</option><option value="gt500mb-lt1gb">500MB-1GB</option><option value="gt1gb-lt5gb">1-5GB</option><option value="gt5gb">&gt;5GB</option></select>
+    <select id="smode" onchange="doSearch()" title="智能:自动判断 | 番号:强制番号正则 | 精确:整词 | 模糊:子串"><option value="smart">🧠 智能搜索</option><option value="code">🔢 番号搜索</option><option value="fuzzy">🌊 模糊搜索</option><option value="exact">🎯 精确搜索</option></select>
+    <button class="btn star-btn" onclick="addToMiner()" title="把当前关键词加入订阅并回溯+监控">⭐ 加入订阅挖掘</button>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-top:10px;text-align:center" id="sCount"></div>
+  <div id="sprog" style="display:none;max-width:600px;margin:8px auto 0"><div style="font-size:11px;color:var(--text2);margin-bottom:3px" id="sprogMsg"></div><div class="prog"><div class="fill" id="sprogBar" style="width:0%"></div></div></div>
+</div>
+
+<!-- 搜索结果（不动） -->
+<div class="card" id="sresWrap" style="display:none">
+  <div class="ct">📋 搜索结果</div>
+  <div id="sres"></div>
+  <div id="spager" style="text-align:center;margin-top:12px"></div>
+</div>
+
+</div>
+
+<!-- ═══════════════════════ 页面2：系统设置 ═══════════════════════ -->
+<div class="main page" id="pageSettings">
+
+<div class="setting-grid">
+
+<!-- 订阅管理（自搜索页移入） -->
+<div class="setting-card" style="grid-column:1/-1">
+  <div class="ct">🎯 订阅管理 <span style="font-size:10px;color:var(--text2)">— ⬇️高亮=命中新内容推 qB 下载，点击切换</span></div>
+  <div class="search-bar mb8">
+    <div style="flex:2"><input id="sikw" placeholder="支持批量，逗号分隔" onkeydown="if(event.key==='Enter')addSubs()"></div>
+    <div class="btn-wrap"><button class="btn" onclick="addSubs()">添加后台任务</button></div>
+  </div>
+  <div id="subsL" class="mb8" style="min-height:20px"></div>
+</div>
+
+<!-- 新内容雷达（自搜索页移入） -->
+<div class="setting-card">
+  <div class="ct"><span class="dot" id="rdot"></span> 新内容雷达 · <span style="font-size:10px" id="rintv">10s</span></div>
+  <div class="sg">
+    <div class="stat"><div class="v" id="rsub">0</div><div class="l">订阅数</div></div>
+    <div class="stat"><div class="v" id="rpush">0</div><div class="l">已推送</div></div>
+    <div class="stat"><div class="v" id="rcursor">-</div><div class="l">指针</div></div>
+    <div class="stat"><div class="v" id="rwatermark">-</div><div class="l">水位线</div></div>
+  </div>
+</div>
+
+<!-- QB 配置 -->
+<div class="setting-card">
+  <div class="ct">📥 qBittorrent 连接</div>
+  <label>地址</label><input id="qbhost" placeholder="192.168.x.x">
+  <label>端口</label><input id="qbport" value="8080">
+  <label>用户名</label><input id="qbuser" value="admin">
+  <label>密码</label><input id="qbpwd" type="password" placeholder="输入密码">
+  <label>分类标签</label><input id="qbcat" value="radar">
+  <label>保存路径</label><input id="qbsave" value="/mnt/Storage1/downloads">
+  <div class="btnr mt8">
+    <button class="btn" onclick="saveQB()">💾 保存</button>
+    <button class="btn test" onclick="testQB()" id="testBtn">🔌 测试连接</button>
+    <span id="qbstat" style="font-size:11px;padding:6px;color:var(--text2)"></span>
+  </div>
+</div>
+
+<!-- 全局统计 -->
+<div class="setting-card">
+  <div class="ct">📊 全局统计</div>
+  <div class="sg" id="sysStats"></div>
+  <div id="plog" style="font-size:11px;color:var(--text2);max-height:150px;overflow-y:auto;margin-top:8px"></div>
+</div>
+
+<!-- 图片代理 -->
+<div class="setting-card">
+  <div class="ct">🖼️ 图片代理 <span style="font-size:10px;color:var(--text2)">— 仅用于加载封面预览图，不影响系统网络</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <div style="flex:1"><label>类型</label><select id="proxyType"><option value="http">HTTP</option><option value="socks5">SOCKS5</option></select></div>
+    <div style="flex:2"><label>地址</label><input id="proxyHost" placeholder="127.0.0.1"></div>
+    <div style="max-width:80px"><label>端口</label><input id="proxyPort" placeholder="7890"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <div style="flex:1"><label>用户名（可选）</label><input id="proxyUser" placeholder="留空则无认证"></div>
+    <div style="flex:1"><label>密码（可选）</label><input id="proxyPass" type="password" placeholder="留空则无认证"></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:flex-end">
+    <button class="btn sm" onclick="saveProxy()">💾 保存</button>
+    <button class="btn sm outline" onclick="clearProxy()">清空代理</button>
+    <span style="font-size:10px;color:var(--text2)" id="proxyStat"></span>
+  </div>
+</div>
+
+<!-- 爬虫任务监控（新增） -->
+<div class="setting-card" style="grid-column:1/-1">
+  <div class="ct">⛏️ 爬虫任务监控 <span style="font-size:10px;color:var(--text2)" id="minerSummary"></span></div>
+  <div id="mlist" style="max-height:500px;overflow-y:auto"></div>
+</div>
+
+<!-- 精选小库管理（新增） -->
+<div class="setting-card" style="grid-column:1/-1">
+  <div class="ct">🗃️ 精选小库管理 <span style="font-size:10px;color:var(--text2)" id="subsInfo"></span></div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:8px">小库仅存订阅的精选种子，搜索只查这里。以下操作不会影响 bitmagnet 爬虫大库。</div>
+  <div class="btnr" style="margin-bottom:10px">
+    <button class="btn danger" style="background:var(--red)" onclick="clearSubs()">🗑 清空小库</button>
+  </div>
+  <label>备份路径（宿主绝对路径）</label>
+  <input id="subsBackupPath" placeholder="/DATA/backup/subs_backup.sql" value="/DATA/backup/subs_backup.sql">
+  <div class="btnr" style="margin-top:8px">
+    <button class="btn" onclick="backupSubs()">💾 备份小库</button>
+    <span id="subsBackupStat" style="font-size:11px;color:var(--text2);margin-left:8px"></span>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════ 详情页（独立覆盖层） ═══════════════════════ -->
+<div class="detail-overlay" id="detailOverlay">
+<div class="detail-content" id="detailContent">
+  <button class="detail-back" onclick="closeDetail()">← 返回搜索结果</button>
+  <div id="detailLoading" style="color:var(--text2);padding:20px;text-align:center">加载中...</div>
+</div>
+</div>
+
+<!-- 图片放大灯箱 -->
+<div id="imgZoom" onclick="closeZoom()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);align-items:center;justify-content:center;cursor:zoom-out">
+  <img id="imgZoomImg" style="max-width:96vw;max-height:96vh;object-fit:contain;box-shadow:0 0 40px rgba(0,0,0,.6);border-radius:6px">
+</div>
+
+<!-- 右下角数据概览浮框 -->
+<div id="dbstatsBox">
+  <div class="dbs-title">📊 数据概览</div>
+  <div class="dbs-row"><span>🎯 精选小库</span><span id="dbsSmall">-</span></div>
+  <div class="dbs-row"><span>🕷️ 爬虫大库</span><span id="dbsBig">-</span></div>
+  <div class="dbs-row" id="dbsRateRow" style="display:none"><span>⚡ 新增速率</span><span id="dbsRate">-</span></div>
+</div>
+
+<!-- ═══════════════════════ JS ═══════════════════════ -->
+<script>
+const API=location.origin+'/api';   // 与面板同源，自适应任意端口(不再写死 3001)
+const PG=50;
+let _curTask=null,_curPage=1,_curKeyword='';
+
+async function api(p,o={}){
+  const r=await fetch(API+p,{headers:{'Content-Type':'application/json'},...o});
+  if(!r.ok)throw new Error(r.status);
+  return r.json();
+}
+function t(m,s='ok'){const e=document.createElement('div');e.className='toast '+s;e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)}
+function fmtSize(b){if(!b)return'?';if(b>1e9)return(b/1e9).toFixed(1)+' GB';if(b>1e6)return(b/1e6).toFixed(0)+' MB';if(b>1e3)return(b/1e3).toFixed(0)+' KB';return b+' B'}
+function fmtNum(n){if(n==null)return'-';if(n>=1e8)return(n/1e8).toFixed(2)+'亿';if(n>=1e4)return(n/1e4).toFixed(1)+'万';return n.toLocaleString();}
+async function loadDbStats(){
+  try{const d=await api('/dbstats');
+    document.getElementById('dbsSmall').textContent=fmtNum(d.small_count)+' 条 · '+fmtSize(d.small_size);
+    document.getElementById('dbsBig').textContent=(d.big_count!=null?'~'+fmtNum(d.big_count):'-')+' 条 · '+fmtSize(d.big_size);
+    var rr=document.getElementById('dbsRateRow');
+    if(d.crawl_per_min!=null){rr.style.display='flex';document.getElementById('dbsRate').textContent=d.crawl_per_min+' 条/分';}
+    else{rr.style.display='none';}
+  }catch(e){}
+}
+function fmtTs(ts){if(!ts)return'';const d=new Date(ts*1000);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escJs(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'')}
+function max(a,b){return a>b?a:b}
+function min(a,b){return a<b?a:b}
+
+// ═══ Tab ═══
+function switchTab(t){
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active',b.textContent.includes(t==='mining'?'搜索':'设置')));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(t==='mining'?'pageMining':'pageSettings').classList.add('active');
+  if(t==='settings'){loadQB();loadStats();loadMinerMonitor();loadProxy();loadSubs();loadRadar();}
+}
+
+// ═══ 搜索 ═══
+let _searchPoll=null;
+async function doSearch(page){
+  const kw=(document.getElementById('skw').value.trim()||_curKeyword||'').trim();if(!kw)return;
+  if(page){_curPage=page}else{_curPage=1}
+  _curKeyword=kw;
+  const sort=document.getElementById('ssort').value;
+  const fTime=document.getElementById('sfTime').value;
+  const fSize=document.getElementById('sfSize').value;
+  const exact=!!(document.getElementById('sExact')&&document.getElementById('sExact').checked);
+  const mode=(document.getElementById('smode')&&document.getElementById('smode').value)||'fuzzy';
+  document.getElementById('sBtn').textContent='搜索中...';document.getElementById('sBtn').disabled=true;
+  document.getElementById('sresWrap').style.display='block';
+  try{
+    const d=await api('/search',{method:'POST',body:JSON.stringify({keyword:kw,sort_type:sort,filter_time:fTime,filter_size:fSize,mode:mode,page:_curPage,page_size:PG})});
+    if(d.cached){showSearchResults(d);}
+    else{
+      document.getElementById('sprog').style.display='block';document.getElementById('sres').innerHTML='';
+      document.getElementById('sCount').textContent='';document.getElementById('spager').style.display='none';
+      pollSearch(d.task_id);
+    }
+  }catch(e){t('搜索失败: '+e.message,'err');resetSearchBtn();}
+}
+function resetSearchBtn(){document.getElementById('sBtn').textContent='搜索';document.getElementById('sBtn').disabled=false;}
+function pollSearch(tid){
+  if(_searchPoll)clearInterval(_searchPoll);_curTask=tid;
+  const b=document.getElementById('sprogBar'),m=document.getElementById('sprogMsg'),p=document.getElementById('sprog');
+  _searchPoll=setInterval(async()=>{
+    try{
+      const d=await api('/search/'+tid+'?page='+_curPage+'&page_size='+PG);
+      if(d.status){const s=d.status;b.style.width=s.progress_pct+'%';m.textContent=s.progress_msg;
+      if(s.status==='done'){clearInterval(_searchPoll);_searchPoll=null;p.style.display='none';resetSearchBtn();if(d.result)showSearchResults(d.result);}
+      if(s.status==='failed'){clearInterval(_searchPoll);_searchPoll=null;p.style.display='none';resetSearchBtn();t('失败: '+s.progress_msg,'err')}}
+    }catch(e){clearInterval(_searchPoll);_searchPoll=null;resetSearchBtn()}
+  },800)
+}
+function showSearchResults(d){
+  const div=document.getElementById('sres'),wrap=document.getElementById('sresWrap');
+  wrap.style.display='block';
+  if(!d||!d.results||!d.results.length){
+    div.innerHTML='<div style="color:var(--text2);padding:12px;text-align:center">无结果</div>';
+    document.getElementById('sCount').textContent='';document.getElementById('spager').style.display='none';resetSearchBtn();return;
+  }
+  document.getElementById('sCount').textContent='共 '+d.total_count.toLocaleString()+' 条'+(d.detected_code?'（智能识别番号: '+d.detected_code+'）':'');
+  const totalPages=Math.ceil(d.total_count/PG);
+  document.getElementById('spager').style.display=totalPages>1?'block':'none';
+  document.getElementById('spager').innerHTML=buildPager(d.total_count,_curPage,totalPages);
+  const start=(_curPage-1)*PG+1,end=min(_curPage*PG,d.total_count);
+  div.innerHTML=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px">显示 ${start}-${end} / ${d.total_count.toLocaleString()}</div>`+
+    d.results.map(r=>`<div class="res-card" onclick="openDetail('${escJs(r.hash)}')">
+      <div class="res-top"><div class="res-name" title="${esc(r.name)}">${esc(r.name)}</div>
+      <div class="res-actions" onclick="event.stopPropagation()">
+      <a href="#" onclick="copyMagStr('${escJs(r.magnet_uri||'magnet:?xt=urn:btih:'+(r.hash||''))}',this,event)" class="res-link">🧲 复制磁力</a></div></div>
+      <div class="res-meta"><span class="res-meta-item">📦 ${fmtSize(r.size)}</span>
+      ${r.files_count?`<span class="res-meta-item">📁 ${r.files_count} 文件</span>`:''}
+      <span class="res-meta-item">📅 ${fmtTs(r.created_at)}</span>
+      <span class="res-meta-item hash">🔑 ${(r.hash||'').slice(0,16)}</span>
+      <span class="res-meta-item" style="color:var(--accent);margin-left:auto">查看详情 ▶</span></div></div>`).join('');
+  resetSearchBtn();
+}
+function buildPager(total,p,tp){
+  let h='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">';
+  const s=max(1,p-3),e=min(tp,p+3);
+  if(p>1)h+=`<button class="btn sm outline" onclick="doSearch(${p-1})">← 上一页</button>`;
+  if(s>1){h+=`<button class="btn sm outline" onclick="doSearch(1)">1</button>`;if(s>2)h+='<span style="color:var(--text2);padding:5px">...</span>'}
+  for(let i=s;i<=e;i++)h+=`<button class="btn sm ${i===p?'':'outline'}" onclick="doSearch(${i})">${i}</button>`;
+  if(e<tp){if(e<tp-1)h+='<span style="color:var(--text2);padding:5px">...</span>';h+=`<button class="btn sm outline" onclick="doSearch(${tp})">${tp}</button>`}
+  if(p<tp)h+=`<button class="btn sm outline" onclick="doSearch(${p+1})">下一页 →</button>`;
+  h+='</div>';return h;
+}
+
+// ═══ 剪贴板 ═══
+function copyMagStr(uri,el,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(uri).then(()=>{el.textContent='✅ 已复制!';setTimeout(()=>{el.textContent='🧲 复制磁力'},2000);}).catch(()=>copyFallback(uri,el));
+  }else{copyFallback(uri,el);}
+}
+function copyFallback(uri,el){
+  try{
+    var ta=document.createElement('textarea');ta.value=uri;ta.style.cssText='position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    var ok=document.execCommand('copy');document.body.removeChild(ta);
+    if(ok){el.textContent='✅ 已复制!';setTimeout(()=>{el.textContent='🧲 复制磁力'},2000)}else t('复制失败','err');
+  }catch(e){t('复制失败','err')}
+}
+
+// ═══ 独立详情页 ═══
+async function openDetail(hash){
+  document.getElementById('detailOverlay').classList.add('open');
+  // 清除上次内容，保留 back 按钮和 loading
+  const content=document.getElementById('detailContent');
+  content.innerHTML='<button class="detail-back" onclick="closeDetail()">← 返回搜索结果</button><div id="detailLoading" style="color:var(--text2);padding:20px;text-align:center">加载中...</div>';
+  const loader=document.getElementById('detailLoading');
+  try{
+    // 先拿 detail + files（几十毫秒），立即渲染；截图异步后台加载
+    const [fd,ft]=await Promise.all([
+      api('/torrent/'+hash+'/detail'),
+      api('/torrent/'+hash+'/files'),
+    ]);
+    renderDetailPage(hash,fd,ft,null);          // 详情+文件列表秒出
+    api('/torrent/'+hash+'/screenshots').then(ws=>{   // 截图好了再补渲染，不阻塞
+      if(ws&&ws.screenshots&&ws.screenshots.length)renderDetailPage(hash,fd,ft,ws);
+    }).catch(()=>{});
+  }catch(e){
+    loader.textContent='加载失败: '+e.message;loader.style.color='var(--red)';
+  }
+}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');}
+function zoomImg(src){var z=document.getElementById('imgZoom');document.getElementById('imgZoomImg').src=src;z.style.display='flex';}
+function closeZoom(){var z=document.getElementById('imgZoom');z.style.display='none';document.getElementById('imgZoomImg').src='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeZoom();}});
+function renderDetailPage(hash,fd,ft,ws){
+  const el=document.createElement('div');
+  const magnet='magnet:?xt=urn:btih:'+hash+'&dn='+(fd&&fd.name?encodeURIComponent(fd.name):'');
+  
+  let html='';
+  html+=`<div class="detail-name">${esc(fd&&fd.name?fd.name:'Unknown')}</div>`;
+  html+=`<div class="detail-sub">收录于 ${fd&&fd.created_at?fmtTs(fd.created_at):'?'} · ${fd&&fd.files_count?fd.files_count:0} 文件</div>`;
+
+  html+=`<div class="detail-grid">`;
+  // 左栏：元信息 + 封面
+  html+=`<div>`;
+  html+=`<div class="detail-meta-card">`;
+  html+=`<div class="mrow"><span class="mlabel">文件大小</span><span class="mval">${fmtSize(fd&&fd.size)}</span></div>`;
+  html+=`<div class="mrow"><span class="mlabel">文件数量</span><span class="mval">${fd&&fd.files_count||0}</span></div>`;
+  html+=`<div class="mrow"><span class="mlabel">收录时间</span><span class="mval">${fd&&fd.created_at?fmtTs(fd.created_at):'-'}</span></div>`;
+  html+=`<div class="mrow"><span class="mlabel">哈希值</span><span class="mval" style="font-family:monospace;font-size:10px">${hash.slice(0,24)}...</span></div>`;
+  if(fd&&fd.content_type)html+=`<div class="mrow"><span class="mlabel">内容类型</span><span class="mval">${esc(fd.content_type)}</span></div>`;
+  if(fd&&fd.video_resolution)html+=`<div class="mrow"><span class="mlabel">分辨率</span><span class="mval">${esc(fd.video_resolution)}</span></div>`;
+  if(fd&&fd.video_codec)html+=`<div class="mrow"><span class="mlabel">编码</span><span class="mval">${esc(fd.video_codec)}</span></div>`;
+  if(fd&&fd.release_group)html+=`<div class="mrow"><span class="mlabel">发布组</span><span class="mval">${esc(fd.release_group)}</span></div>`;
+  html+=`</div>`;
+
+  // DMM / whatslink 封面（截图 URL 已经是 /api/proxy/screenshot 代理路径）
+  let posters=[];
+  if(fd&&fd.screenshots)posters=posters.concat(fd.screenshots.map(s=>({url:s.url,label:'封面: '+s.code})));
+  if(ws&&ws.screenshots)posters=posters.concat(ws.screenshots);
+  if(posters.length){
+    html+=`<div class="detail-poster mt8"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">🖼️ 内容预览</div>`;
+    posters.slice(0,4).forEach(p=>{let src=p.url.startsWith('/api/proxy/')?p.url:API+'/proxy/image?url='+encodeURIComponent(p.url);html+=`<div><img src="${src}" onclick="zoomImg('${escJs(src)}')" style="cursor:zoom-in" onerror="this.alt='封面加载失败';this.style.display='none';this.nextElementSibling.style.display='block'" loading="lazy"><span style="display:none;font-size:10px;color:var(--red);text-align:center">⚠️ 封面加载失败</span><div class="label">${esc(p.label||'')}</div></div>`;});
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+
+  // 右栏：占位
+  html+=`<div></div>`;
+  html+=`</div>`; // end detail-grid
+
+  // 磁力链接
+  html+=`<div class="card"><div class="ct">🔗 磁链地址</div>`;
+  html+=`<div class="magnet-box"><code id="magCode">${esc(magnet)}</code><button class="btn copy" id="copyBtn" onclick="copyMagnet()">📋 复制</button></div>`;
+  html+=`<div class="btnr"><button class="btn" style="background:linear-gradient(135deg,#10b981,#059669)" onclick="pushCurrent('${escJs(hash)}',this)">⬇️ 推送到 qB 下载</button></div></div>`;
+
+  // 文件列表
+  if(ft&&ft.files&&ft.files.length){
+    html+=`<div class="card"><div class="ct">📁 文件列表 (${ft.total_files} files · 🖼️ ${ft.images?ft.images.length:0} 图片)</div>`;
+    html+=`<div style="max-height:400px;overflow-y:auto"><table class="file-table">`;
+    ft.files.forEach(f=>{
+      html+=`<tr class="${f.is_image?'img-row':''}"><td style="width:24px">${f.is_image?'🖼️':'📄'}</td><td style="word-break:break-all">${esc(f.path)}</td><td class="fsize">${fmtSize(f.size)}</td></tr>`;
+    });
+    html+=`</table></div></div>`;
+  }
+
+  el.innerHTML=html;
+  const c=document.getElementById('detailContent');
+  c.innerHTML='<button class="detail-back" onclick="closeDetail()">← 返回搜索结果</button>';
+  c.appendChild(el);
+  document.getElementById('detailOverlay').scrollTop=0;
+}
+async function pushCurrent(hash,btn){
+  const old=btn.textContent;btn.textContent='推送中...';btn.disabled=true;
+  try{const d=await api('/torrent/'+hash+'/push',{method:'POST'});
+    if(d.success){btn.textContent='✅ 已推送下载';t('✅ 已推送到 qB 下载','ok');}
+    else{btn.textContent=old;btn.disabled=false;t('推送失败: '+(d.message||'qB 未连接'),'err');}
+  }catch(e){btn.textContent=old;btn.disabled=false;t('推送失败: '+e.message,'err');}
+}
+function copyMagnet(){
+  const code=document.getElementById('magCode');
+  if(!code)return;
+  const uri=code.textContent;
+  const btn=document.getElementById('copyBtn');
+  (navigator.clipboard&&window.isSecureContext?navigator.clipboard.writeText(uri):new Promise((resolve,reject)=>{
+    try{var ta=document.createElement('textarea');ta.value=uri;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy')?resolve():reject(new Error('copy failed'));document.body.removeChild(ta)}catch(e){reject(e)}
+  })).then(()=>{btn.textContent='✅ 已复制!';btn.classList.add('done');setTimeout(()=>{btn.textContent='📋 复制';btn.classList.remove('done')},2000)}).catch(()=>t('复制失败','err'));
+}
+
+// ═══ 订阅 & 挖掘 ═══
+async function addToMiner(){
+  const kw=_curKeyword||document.getElementById('skw').value.trim();
+  if(!kw)return t('请先输入搜索关键词','err');
+  try{
+    const d=await api('/subscriptions',{method:'POST',body:JSON.stringify({keyword:kw})});
+    loadSubs();const added=d.added||[];
+    if(added.length)t(`✅ "${kw}" 已加入订阅挖掘`,'ok');else t(`📌 "${kw}" 已在列表中`,'info');
+  }catch(e){t('加入失败: '+e.message,'err');}
+}
+async function loadSubs(){
+  try{const d=await api('/subscriptions');if(!d||!d.subscriptions)return;
+  document.getElementById('subsL').innerHTML=d.subscriptions.length
+    ?d.subscriptions.map(s=>`<span class="tag">${esc(s.keyword)} <span onclick="togglePush(${s.id},${s.push_qb?0:1})" title="${s.push_qb?'已开启推送下载(命中新内容→qB)，点击关闭':'点击开启：监控到新内容且精确匹配时推qB下载'}" style="cursor:pointer;opacity:${s.push_qb?1:.3}">⬇️</span> <span class="rm" onclick="delSub(${s.id})">×</span></span>`).join('')
+    :'<span style="color:var(--text2);font-size:11px">无订阅，输入关键词添加</span>';
+  }catch(e){}
+}
+async function togglePush(id,val){try{await api('/subscriptions/'+id+'/push_qb',{method:'POST',body:JSON.stringify({push_qb:!!val})});loadSubs();t(val?'✅ 已开启推送下载(仅精确命中)':'已关闭推送下载',val?'ok':'info');}catch(e){t('操作失败: '+e.message,'err');}}
+async function addSubs(){
+  const kw=document.getElementById('sikw').value.trim();if(!kw)return;
+  const ks=kw.split(/[,，\s]+/).filter(Boolean);if(!ks.length)return;
+  try{const d=await api('/subscriptions',{method:'POST',body:JSON.stringify({keywords:ks})});
+  document.getElementById('sikw').value='';loadSubs();
+  const added=d.added||[];if(added.length)t(`✅ 已添加 ${added.length} 个关键词`,'ok');else t('📌 关键词已存在','info');
+  }catch(e){t('添加失败: '+e.message,'err');}
+}
+async function delSub(id){await api('/subscriptions/'+id,{method:'DELETE'});loadSubs();}
+
+// ═══ 爬虫任务监控（设置页） ═══
+async function loadMinerMonitor(){
+  try{
+    const d=await api('/miner/status');
+    if(!d||!d.jobs||!d.jobs.length){
+      document.getElementById('mlist').innerHTML='<div style="color:var(--text2);font-size:11px">暂无挖掘任务</div>';
+      document.getElementById('minerSummary').textContent='';return;
+    }
+    let runningCount=0,pausedCount=0;
+    d.jobs.forEach(j=>{if(j.running)runningCount++;else pausedCount++;});
+    document.getElementById('minerSummary').textContent=`${runningCount} 运行中 · ${pausedCount} 暂停`;
+    document.getElementById('mlist').innerHTML=d.jobs.sort((a,b)=>(b.running?1:0)-(a.running?1:0)).map(j=>{
+      const totalEst=j.estimated_total||1;
+      let pct=0;
+      if(j.status==='done')pct=100;else if(j.status==='pending')pct=0;else if(totalEst>0)pct=min(Math.round(j.scanned_count/totalEst*100),99);
+      const sc={running:'var(--green)',paused:'var(--yellow)',done:'var(--blue)',pending:'var(--text2)'};
+      const sl={running:'运行中',paused:'已暂停',done:'已完成',pending:'待开始'};
+      return `<div class="miner-item">
+        <div class="flex"><div><span style="font-weight:500">${esc(j.keyword)}</span>
+        <span style="font-size:10px;color:${sc[j.status]||'var(--text2)'};margin-left:6px">● ${sl[j.status]||j.status}</span></div>
+        <div style="font-size:11px;color:var(--text2)">${pct}%</div></div>
+        <div style="font-size:10px;color:var(--text2);margin-top:3px">已扫 ${(j.scanned_count||0).toLocaleString()} / ~${(totalEst||0).toLocaleString()} · 命中 ${j.match_count||0}</div>
+        <div class="prog"><div class="fill" style="width:${pct}%;background:${pct>=99?'var(--blue)':pct>50?'var(--green)':'var(--accent)'}"></div></div>
+        <div class="btnr mt8">
+        ${j.running?`<button class="btn sm danger" onclick="stopMiner('${escJs(j.keyword)}')">⏹ 停止</button>`
+          :`<button class="btn sm" onclick="startMiner('${escJs(j.keyword)}')">▶ 启动</button>`}
+        <button class="btn sm danger" onclick="deleteMiner('${escJs(j.keyword)}')" style="background:var(--red)">🗑 删除</button>
+        </div></div>`;
+    }).join('');
+  }catch(e){}
+}
+async function startMiner(kw){await api('/miner/start',{method:'POST',body:JSON.stringify({keyword:kw})});loadMinerMonitor();t('挖掘已启动: '+kw,'ok')}
+async function stopMiner(kw){await api('/miner/stop',{method:'POST',body:JSON.stringify({keyword:kw})});loadMinerMonitor();t('挖掘已停止: '+kw,'info')}
+async function deleteMiner(kw){if(!confirm('确定永久删除该任务进度吗？（不会删除已入库的资源）'))return;await fetch(API+'/miner/delete/'+encodeURIComponent(kw),{method:'DELETE'});loadMinerMonitor();t('任务已永久删除: '+kw,'err')}
+
+// ═══ 精选小库管理 ═══
+async function clearSubs(){
+  if(!confirm('确定清空精选小库吗？将删除所有精选种子和订阅（不影响 bitmagnet 爬虫大库）。'))return;
+  try{const d=await api('/subs/clear',{method:'POST'});
+    if(d.success){t('✅ 小库已清空','ok');loadSubs();loadStats();loadMinerMonitor();}
+    else t('清空失败: '+(d.message||''),'err');
+  }catch(e){t('清空失败: '+e.message,'err');}
+}
+async function backupSubs(){
+  const path=document.getElementById('subsBackupPath').value.trim();
+  if(!path)return t('请填写备份路径','err');
+  const stat=document.getElementById('subsBackupStat');stat.textContent='备份中...';stat.style.color='var(--text2)';
+  try{const d=await api('/subs/backup',{method:'POST',body:JSON.stringify({path:path})});
+    if(d.success){stat.textContent='✅ 已备份 '+fmtSize(d.size)+' → '+d.path;stat.style.color='var(--green)';t('✅ 备份完成','ok');}
+    else{stat.textContent='❌ '+(d.message||'失败');stat.style.color='var(--red)';t('备份失败','err');}
+  }catch(e){stat.textContent='❌ '+e.message;stat.style.color='var(--red)';t('备份失败: '+e.message,'err');}
+}
+
+// ═══ 雷达 ═══
+async function loadRadar(){
+  try{const d=await api('/radar/status');
+  document.getElementById('rdot').className=d.running?'dot':'dot off';
+  document.getElementById('rsub').textContent=d.subscriptions;
+  document.getElementById('rcursor').textContent=(d.last_cursor_hash||'-').slice(0,8);
+  document.getElementById('rwatermark').textContent=d.watermark_ts?(d.watermark_ts.slice(0,16)):'-';
+  }catch(e){}
+}
+
+// ═══ 设置页 QB ═══
+async function loadQB(){
+  try{const d=await api('/qb/config');document.getElementById('qbhost').value=d.host||'';document.getElementById('qbport').value=d.port||8080;document.getElementById('qbuser').value=d.user||'admin';document.getElementById('qbcat').value=d.category||'radar';document.getElementById('qbsave').value=d.save_path||'';document.getElementById('qbstat').textContent=d.connected?'✅ 已连接':'❌ 未连接';document.getElementById('qbstat').style.color=d.connected?'var(--green)':'var(--red)'}catch(e){}
+}
+async function saveQB(){
+  const data={host:document.getElementById('qbhost').value,port:document.getElementById('qbport').value,user:document.getElementById('qbuser').value,password:document.getElementById('qbpwd').value,category:document.getElementById('qbcat').value,save_path:document.getElementById('qbsave').value};
+  try{const d=await api('/qb/config',{method:'POST',body:JSON.stringify(data)});
+  t(d.connected?'已保存并连接!':'已保存，但连接失败',d.connected?'ok':'err');
+  document.getElementById('qbstat').textContent=d.connected?'✅ 已连接':'❌ 未连接';document.getElementById('qbstat').style.color=d.connected?'var(--green)':'var(--red)'
+  }catch(e){t('保存失败: '+e.message,'err')}
+}
+async function testQB(){
+  const btn=document.getElementById('testBtn');btn.textContent='测试中...';btn.disabled=true;
+  const data={host:document.getElementById('qbhost').value,port:document.getElementById('qbport').value,user:document.getElementById('qbuser').value,password:document.getElementById('qbpwd').value};
+  try{const d=await api('/qb/test',{method:'POST',body:JSON.stringify(data)});
+    if(d.connected)t(`✅ 连接成功! 延迟 ${d.latency_ms}ms`,'ok');else t('❌ 连接失败','err');
+    document.getElementById('qbstat').textContent=d.connected?'✅ 已连接':'❌ 未连接';document.getElementById('qbstat').style.color=d.connected?'var(--green)':'var(--red)';
+  }catch(e){t('测试失败: '+e.message,'err')}
+  btn.textContent='🔌 测试连接';btn.disabled=false;
+}
+
+// ═══ 统计 ═══
+async function loadStats(){
+  try{const d=await api('/stats');
+  document.getElementById('rpush').textContent=d.total_pushed;
+  document.getElementById('sysStats').innerHTML=`
+    <div class="stat"><div class="v">${(d.cache_entries||0).toLocaleString()}</div><div class="l">缓存</div></div>
+    <div class="stat"><div class="v">${(d.subscriptions||0).toLocaleString()}</div><div class="l">订阅</div></div>
+    <div class="stat"><div class="v">${(d.miner_jobs||0).toLocaleString()}</div><div class="l">挖掘任务</div></div>
+    <div class="stat"><div class="v">${(d.total_pushed||0).toLocaleString()}</div><div class="l">已推送</div></div>
+    <div class="stat"><div class="v">${(d.total_cleaned||0).toLocaleString()}</div><div class="l">已清理</div></div>
+    <div class="stat"><div class="v">${d.qb_connected?'✅':'❌'}</div><div class="l">QB</div></div>`;
+  document.getElementById('plog').innerHTML=`<div style="padding:8px">✅ 系统正常 · 缓存 ${d.cache_entries||0} 条 · 推送 ${d.total_pushed||0} 次 · 清理 ${d.total_cleaned||0} 次 · 挖掘扫描 ${(d.miner_total_scanned||0).toLocaleString()} 条</div>`;
+  const si=document.getElementById('subsInfo');if(si)si.textContent='小库 '+(d.cache_entries||0).toLocaleString()+' 种子 · '+(d.subscriptions||0)+' 订阅';
+  }catch(e){}
+}
+
+// ═══ 设置页代理 ═══
+async function loadProxy(){
+  try{const d=await api('/proxy/config');
+    const url=d.proxy_url||'';
+    if(url){
+      // 手动解析，避免正则回溯
+      let rest=url,type='http',auth='',host='',port='';
+      const protoEnd=rest.indexOf('://');
+      if(protoEnd>0){type=rest.slice(0,protoEnd);rest=rest.slice(protoEnd+3)}
+      const atPos=rest.lastIndexOf('@');
+      if(atPos>0){auth=rest.slice(0,atPos);rest=rest.slice(atPos+1)}
+      const colonPos=rest.lastIndexOf(':');
+      if(colonPos>0){host=rest.slice(0,colonPos);port=rest.slice(colonPos+1)}
+      else{host=rest}
+      document.getElementById('proxyType').value=type||'http';
+      document.getElementById('proxyHost').value=host;
+      document.getElementById('proxyPort').value=port;
+      if(auth){const ac=auth.split(':');document.getElementById('proxyUser').value=decodeURIComponent(ac[0]||'');document.getElementById('proxyPass').value=decodeURIComponent(ac[1]||'');}
+      else{document.getElementById('proxyUser').value='';document.getElementById('proxyPass').value='';}
+      document.getElementById('proxyStat').textContent='当前: '+type+'://'+(auth?'***@':'')+host+':'+port;
+    }else{
+      document.getElementById('proxyType').value='http';
+      document.getElementById('proxyHost').value='';document.getElementById('proxyPort').value='';
+      document.getElementById('proxyUser').value='';document.getElementById('proxyPass').value='';
+      document.getElementById('proxyStat').textContent='未配置代理（直连）';
+    }
+  }catch(e){}
+}
+async function saveProxy(){
+  const type=document.getElementById('proxyType').value;
+  const host=document.getElementById('proxyHost').value.trim();
+  const port=document.getElementById('proxyPort').value.trim();
+  const user=document.getElementById('proxyUser').value.trim();
+  const pass=document.getElementById('proxyPass').value;
+  if(!host||!port)return t('请填写代理地址和端口','err');
+  let url=type+'://';
+  if(user)url+=encodeURIComponent(user)+':'+encodeURIComponent(pass)+'@';
+  url+=host+':'+port;
+  try{const d=await api('/proxy/config',{method:'POST',body:JSON.stringify({proxy_url:url})});
+    document.getElementById('proxyStat').textContent='✅ 已保存: '+type+'://'+(user?'***@':'')+host+':'+port;
+    t('代理已保存!','ok');
+  }catch(e){t('保存失败: '+e.message,'err');}
+}
+async function clearProxy(){
+  await api('/proxy/config',{method:'POST',body:JSON.stringify({proxy_url:''})});
+  document.getElementById('proxyHost').value='';document.getElementById('proxyPort').value='';
+  document.getElementById('proxyUser').value='';document.getElementById('proxyPass').value='';
+  document.getElementById('proxyStat').textContent='已清空代理（直连）';
+  t('代理已清空','info');
+}
+
+// ═══ Init ═══
+function init(){loadSubs();loadRadar();loadQB();loadProxy();loadDbStats();}
+init();
+setInterval(loadRadar,5000);
+setInterval(loadDbStats,30000);   // 右下角数据概览
+setInterval(loadSubs,10000);
+// 如果用户在看设置页，自动刷新监控
+setInterval(()=>{
+  if(document.getElementById('pageSettings').classList.contains('active')){
+    loadStats();loadMinerMonitor();
+  }
+},5000);
+</script>
+</body>
+</html>
