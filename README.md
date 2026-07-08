@@ -1,5 +1,6 @@
-# 纯ai项目由deepseek-v4-pro生成
-# 双库精选搜索引擎 (Bitmagnet-Indexer)
+# Bitmagnet-Indexer
+
+> 🤖 纯 AI 项目 · 由 Claude + OpenClaw 生成
 
 一个"外挂"式种子搜索/订阅/下载系统，接入现有 **bitmagnet** 爬虫的 PostgreSQL 数据库。
 采用**双库架构**：bitmagnet 大库只读、永不修改；本程序在同实例创建 `subs` schema 作为**精选小库**
@@ -21,26 +22,37 @@
 
 ---
 
-## 一键安装（推荐）
+## 零、一键安装（推荐）
 
-可以直接一行命令在线安装：
-
-```
+```bash
+# 直接从 GitHub Release 下载并安装（自动识别架构）
 bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh)
-```
-## 一键卸载
-bash install.sh --uninstall
-```
-脚本会**自动**：识别架构（ARM64/x86_64）选对镜像 → 探测 bitmagnet 数据库所在磁盘并默认把数据卷放同盘
-（也可手动输入路径）→ 交互填写 PG / qBittorrent 连接 → 导入镜像 → 启动容器。装完访问 `http://<设备IP>:端口`。
 
-> 也可指定源路径：`bash install.sh /path/to/source`
+# 国内用户（GitHub 下载慢）可使用镜像加速：
+bash <(curl -sL https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/install.sh) --mirror https://ghproxy.com
+```
 
-下面是手动部署步骤（不想用脚本时参考）。
+> 💡 **国内镜像加速**：`--mirror` 参数支持任何 GitHub 代理服务，
+> 如 `https://ghproxy.com`、`https://ghfast.com` 等。
+> 原理：[镜像地址] + GitHub Release URL。
+> 也支持 `MIRROR=https://ghproxy.com bash install.sh` 环境变量方式。
+
+脚本会**自动**：识别架构（ARM64/x86_64）→ 从 GitHub Release 下载对应镜像 → 交互填写 PG / qBittorrent 连接 → 导入镜像 → 启动容器。装完访问 `http://<设备IP>:端口`。
+
+### 卸载
+
+```bash
+# 停止并删除容器
+docker rm -f search-engine 2>/dev/null
+# 删除数据目录（可选）
+rm -rf /mnt/Storage1/search_engine_data
+```
 
 ---
 
-## 一、前置条件
+## 一、手动安装
+
+### 前置条件
 
 | 组件 | 版本 | 说明 |
 |------|------|------|
@@ -49,23 +61,22 @@ bash install.sh --uninstall
 | bitmagnet | 任意 | 提供种子数据的大库（只读） |
 | qBittorrent | 任意 | 可选，用于推送下载 |
 
-## 二、镜像获取
-
-预构建镜像文件（约 65MB）：
-
-- `search-engine-arm64.tar.gz` — ARM64 架构（树莓派、NAS、Armbian）
-- `search-engine-amd64.tar.gz` — x86_64 架构
-
-## 三、导入镜像并启动容器
+### 从 Release 下载镜像
 
 ```bash
-# 1. 导入镜像
-docker load < search-engine-arm64.tar.gz
+# ARM64
+wget https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/search-engine-arm64.tar.gz
 
-# 2. 创建数据目录
-mkdir -p /mnt/Storage1/search_engine_data
+# x86_64
+wget https://github.com/yesterday666/bitmagnet-indexer/releases/download/v1.0.0/search-engine-amd64.tar.gz
 
-# 3. 启动容器
+# 导入
+docker load < search-engine-*.tar.gz
+```
+
+### 手动启动容器
+
+```bash
 docker run -d \
     --name search-engine \
     --network host \
@@ -86,7 +97,7 @@ docker run -d \
     search-engine:latest
 ```
 
-## 四、系统环境变量
+## 二、系统环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
@@ -103,82 +114,13 @@ docker run -d \
 | `QB_CATEGORY` | `radar` | qBittorrent 分类标签 |
 | `API_PORT` | `3001` | Web 面板端口 |
 
-## 五、手动部署（Docker 方式）
+## 三、手动构建镜像
 
 ```bash
-# 构建镜像
 docker build -t search-engine:latest .
-
-# 创建数据目录
-mkdir -p /mnt/Storage1/search_engine_data
-
-# 启动
-docker run -d \
-    --name search-engine \
-    --network host \
-    --restart unless-stopped \
-    -v /mnt/Storage1/search_engine_data:/data \
-    -e PG_HOST=127.0.0.1 \
-    -e PG_PORT=5432 \
-    -e PG_DB=bitmagnet \
-    -e PG_USER=bitmagnet \
-    -e PG_PASSWORD=bitmagnet \
-    search-engine:latest
 ```
 
-## 六、手动部署（Systemd 方式，裸机运行）
-
-```bash
-# 1. 安装系统依赖
-apt install python3 python3-pip python3-venv postgresql-client
-
-# 2. 创建目录
-mkdir -p /DATA/AppData/search_engine /data/search_engine_data
-cp *.py panel.html Dockerfile /DATA/AppData/search_engine/
-
-# 3. 虚拟环境
-cd /DATA/AppData/search_engine
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# 4. 创建 systemd 服务
-cat > /etc/systemd/system/search-engine.service << 'EOF'
-[Unit]
-Description=Bitmagnet-Indexer Search Engine
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/DATA/AppData/search_engine
-ExecStart=/DATA/AppData/search_engine/venv/bin/python /DATA/AppData/search_engine/api_server.py
-Restart=on-failure
-RestartSec=5
-Environment=SQLITE_PATH=/data/search_engine_data/search_engine.db
-Environment=LOG_DIR=/data/search_engine_data/logs
-Environment=PG_HOST=127.0.0.1
-Environment=PG_PORT=5432
-Environment=PG_DB=bitmagnet
-Environment=PG_USER=bitmagnet
-Environment=PG_PASSWORD=bitmagnet
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# 5. 启动
-systemctl enable --now search-engine.service
-```
-
-## 七、界面截图
-
-访问 `http://<IP>:3001` 即可打开 Web 面板：
-
-- **搜索**：Bing 风格搜索栏 + 排序/时间/大小/模式筛选
-- **订阅管理**：关键词订阅、qB 推送开关
-- **智能番号识别**：自动适配 SSIS-790 / FC2-PPV-1234567 / 1PONDO 等格式
-
-## 八、FAQ
+## 四、FAQ
 
 **Q: 搜索不出结果？**  
 A: 首次使用小库为空，需要先添加订阅触发全量回溯。在「系统设置 → 订阅管理」添加关键词后，后台自动开始回溯 bitmagnet 大库并灌入小库，此过程可能需要几分钟到几小时（取决于数据量）。
